@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "build": "ng build",
-    "deploy": "ng build --base-href='/angular-chat-25/' && gh-pages -d dist/angular-chat-25",
+    "deploy": "ng build --base-href='/angular-chat-25/' && gh-pages -d dist/angular-chat-25/browser",
     "ng": "ng",
     "start": "ng serve",
     "watch": "ng build --watch --configuration development",
