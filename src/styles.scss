@@ -1,1 +1,82 @@
-/* You can add global styles to this file, and also import other style files */
+// Chat Widget Global Styles
+:root {
+  --chat-primary: #007bff;
+  --chat-secondary: #6c757d;
+  --chat-success: #28a745;
+  --chat-info: #17a2b8;
+  --chat-warning: #ffc107;
+  --chat-danger: #dc3545;
+  --chat-light: #f8f9fa;
+  --chat-dark: #343a40;
+  
+  // Chat widget specific colors
+  --chat-widget-bg: #ffffff;
+  --chat-widget-border: #dee2e6;
+  --chat-robot-bg: var(--chat-primary);
+  --chat-user-msg-bg: var(--chat-primary);
+  --chat-ai-msg-bg: #f1f3f4;
+  --chat-overlay-bg: rgba(0, 0, 0, 0.3);
+}
+
+// Ensure body allows for floating elements
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  position: relative;
+}
+
+// Animation keyframes for chat widget
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes typing {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+// Bootstrap utilities override for chat widget
+.chat-widget {
+  // Ensure z-index is high enough
+  z-index: 1050 !important;
+  
+  .fade-in {
+    animation: slideInUp 0.3s ease-out;
+  }
+  
+  .fade-out {
+    animation: slideOutDown 0.3s ease-in;
+  }
+}

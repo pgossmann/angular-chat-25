@@ -1,0 +1,25 @@
+<!-- Floating Robot Button -->
+<div class="floating-robot-container">
+    <button 
+      type="button"
+      class="floating-robot-btn btn btn-primary rounded-circle shadow-lg"
+      [class.active]="isOpen()"
+      [class.has-notifications]="showNotificationBadge()"
+      (click)="onRobotClick()"
+      [attr.aria-label]="isOpen() ? 'Close chat' : 'Open chat'"
+      [attr.title]="isOpen() ? 'Close chat' : appearance().title">
+      
+      <!-- Robot Icon -->
+      <div class="robot-icon" [class.rotated]="isOpen()">
+        <span class="robot-emoji">{{ appearance().robotIcon }}</span>
+      </div>
+      
+      <!-- Notification Badge -->
+      <span 
+        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+        *ngIf="showNotificationBadge()">
+        <span class="notification-pulse"></span>
+        <span class="visually-hidden">New messages</span>
+      </span>
+    </button>
+  </div>

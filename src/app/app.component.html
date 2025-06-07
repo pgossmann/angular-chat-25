@@ -1,0 +1,131 @@
+<!-- Demo Content (simulating a website) -->
+<div class="demo-website">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+      <a class="navbar-brand" href="#">Demo Website</a>
+      <span class="navbar-text">
+        Chat widget demo - look for the robot in bottom-right corner!
+      </span>
+    </div>
+  </nav>
+  
+  <main class="container my-5">
+    <div class="row">
+      <div class="col-12">
+        <h1 class="display-4">Welcome to Our Website</h1>
+        <p class="lead">This is a demo website showing the floating chat widget.</p>
+        
+        <div class="row">
+          <div class="col-md-8">
+            <h2>About Our Service</h2>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
+            
+            <h3>Features</h3>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item">🤖 AI-powered chat assistant</li>
+              <li class="list-group-item">💬 Real-time conversations</li>
+              <li class="list-group-item">🎨 Beautiful Bootstrap UI</li>
+              <li class="list-group-item">📱 Mobile responsive design</li>
+              <li class="list-group-item">🔧 Easy to integrate</li>
+            </ul>
+            
+            <div class="mt-4">
+              <h3>Try the Chat Widget!</h3>
+              <p>Look for the floating robot button in the bottom-right corner. Click it to start chatting with our AI assistant!</p>
+              <div class="alert alert-info">
+                <strong>Tip:</strong> The robot will show a notification badge when there are unread messages.
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-4">
+            <div class="card">
+              <div class="card-header">
+                <h5>Widget Status</h5>
+              </div>
+              <div class="card-body">
+                <p>The chat widget is now active and ready to use.</p>
+                <p><small class="text-muted">Powered by Firebase AI Logic & Angular</small></p>
+              </div>
+            </div>
+            
+            <div class="card mt-3">
+              <div class="card-header">
+                <h5>Demo Content</h5>
+              </div>
+              <div class="card-body">
+                <p>This is just demo content to show how the chat widget integrates with any existing website.</p>
+                <p>The widget floats above all content and doesn't interfere with your site's layout.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- More demo content to show scrolling -->
+        <div class="mt-5">
+          <h2>More Content</h2>
+          <div class="row">
+            <div class="col-md-6">
+              <p>Scroll down to see more content. The chat widget stays fixed in position.</p>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+            </div>
+            <div class="col-md-6">
+              <p>The widget is responsive and adapts to different screen sizes.</p>
+              <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Extra content for scrolling -->
+        <div class="mt-5 mb-5">
+          <h3>Technology Stack</h3>
+          <div class="row">
+            <div class="col-md-4">
+              <h5>Frontend</h5>
+              <ul>
+                <li>Angular 20</li>
+                <li>Bootstrap 5</li>
+                <li>TypeScript</li>
+                <li>SCSS</li>
+              </ul>
+            </div>
+            <div class="col-md-4">
+              <h5>Backend</h5>
+              <ul>
+                <li>Firebase AI Logic</li>
+                <li>Gemini 2.0 Flash</li>
+                <li>Real-time streaming</li>
+              </ul>
+            </div>
+            <div class="col-md-4">
+              <h5>Features</h5>
+              <ul>
+                <li>System prompts</li>
+                <li>Message history</li>
+                <li>Responsive design</li>
+                <li>Accessibility</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <footer class="bg-light py-4 mt-5">
+    <div class="container">
+      <div class="row">
+        <div class="col-12 text-center">
+          <p class="mb-0">&copy; 2025 Demo Website. Chat widget powered by Angular & Firebase.</p>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- Chat Widget Components -->
+<app-floating-robot></app-floating-robot>
+<app-chat-overlay></app-chat-overlay>
+
+<!-- Router Outlet for additional routes -->
+<router-outlet />

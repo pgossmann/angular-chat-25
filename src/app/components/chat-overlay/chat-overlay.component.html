@@ -1,0 +1,145 @@
+<!-- Chat Overlay Container -->
+<div class="chat-overlay" [class.show]="isOpen()" *ngIf="isOpen()">
+    <div class="chat-container">
+      
+      <!-- Chat Header -->
+      <div class="chat-header">
+        <div class="d-flex align-items-center">
+          <span class="chat-avatar me-2">{{ appearance().robotIcon }}</span>
+          <div class="flex-grow-1">
+            <h6 class="mb-0">{{ appearance().title }}</h6>
+            <small class="text-muted">{{ getCurrentPromptName() }}</small>
+          </div>
+          <button 
+            type="button" 
+            class="btn-close" 
+            (click)="onCloseChat()"
+            aria-label="Close chat">
+          </button>
+        </div>
+      </div>
+  
+      <!-- System Prompt Selector -->
+      <div class="chat-controls">
+        <div class="row g-2 align-items-center">
+          <div class="col">
+            <select 
+              class="form-select form-select-sm" 
+              [(ngModel)]="selectedPromptType"
+              (change)="onPromptTypeChange()">
+              <option *ngFor="let prompt of availablePrompts" [value]="prompt.id">
+                {{ prompt.name }}
+              </option>
+            </select>
+          </div>
+          <div class="col-auto">
+            <button 
+              type="button" 
+              class="btn btn-outline-secondary btn-sm"
+              (click)="clearChat()"
+              [disabled]="messages().length === 0"
+              title="Clear conversation">
+              🗑️
+            </button>
+          </div>
+        </div>
+        
+        <!-- Custom Prompt Input -->
+        <div class="mt-2" *ngIf="selectedPromptType === 'custom'">
+          <textarea 
+            class="form-control form-control-sm"
+            [(ngModel)]="customPrompt"
+            placeholder="Enter your custom system prompt..."
+            rows="2">
+          </textarea>
+        </div>
+      </div>
+  
+      <!-- Messages Area -->
+      <div class="chat-messages" #chatMessages>
+        <!-- Empty State -->
+        <div class="empty-state text-center py-4" *ngIf="messages().length === 0">
+          <div class="mb-3">
+            <span style="font-size: 3rem;">{{ appearance().robotIcon }}</span>
+          </div>
+          <h6>{{ appearance().subtitle }}</h6>
+          <p class="text-muted small">Ask me anything! I'm here to help.</p>
+        </div>
+  
+        <!-- Messages -->
+        <div class="message-list">
+          <div 
+            class="message"
+            [class.user-message]="message.isUser"
+            [class.ai-message]="!message.isUser"
+            [class.error-message]="message.error"
+            *ngFor="let message of messages(); let i = index; trackBy: trackByMessageId"
+            [attr.data-message-id]="message?.id || i">
+            
+            <!-- Message Avatar -->
+            <div class="message-avatar">
+              <span *ngIf="message.isUser">👤</span>
+              <span *ngIf="!message.isUser">{{ appearance().robotIcon }}</span>
+            </div>
+  
+            <!-- Message Content -->
+            <div class="message-content">
+              <div class="message-bubble">
+                <div class="message-text" [class.streaming]="message.isStreaming">
+                  {{ message.content }}
+                  <span class="typing-cursor" *ngIf="message.isStreaming">|</span>
+                </div>
+              </div>
+              <div class="message-time">
+                {{ message.timestamp | date:'short' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Chat Input -->
+      <div class="chat-input">
+        <div class="input-container">
+          <textarea 
+            class="form-control message-input"
+            [(ngModel)]="currentMessage"
+            (keydown)="onKeyDown($event)"
+            (input)="adjustTextareaHeight($event)"
+            [placeholder]="appearance().placeholder"
+            [disabled]="isLoading()"
+            rows="1"
+            #messageInput>
+          </textarea>
+        </div>
+        
+        <div class="input-actions">
+          <button 
+            type="button"
+            class="send-btn"
+            (click)="sendMessage()"
+            [disabled]="!currentMessage.trim() || isLoading()"
+            [attr.title]="isLoading() ? 'Sending...' : 'Send message'">
+            
+            @if (isLoading()) {
+              <div class="spinner"></div>
+            } @else {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 19V5M5 12l7-7 7 7"/>
+              </svg>
+            }
+          </button>
+        </div>
+        
+        <!-- Input Footer -->
+        <div class="input-footer">
+          <small class="text-muted">
+            {{ currentMessage.length }}/2000 characters • Enter to send, Shift+Enter for new line
+          </small>
+          @if (isLoading()) {
+            <small class="text-primary">AI is thinking...</small>
+          }
+        </div>
+      </div>
+    </div>
+  </div>

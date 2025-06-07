@@ -1,20 +1,14 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { ChatComponent } from "./chat/chat";
+import { FloatingRobotComponent } from './components/floating-robot/floating-robot.component';
+import { ChatOverlayComponent } from './components/chat-overlay/chat-overlay.component';
 
 @Component({
   selector: 'app-root',
-  template: `
-    <app-chat></app-chat>
-    <router-outlet />
-  `,
-  styles: [`
-    :host {
-      display: block;
-      height: 100vh;
-    }
-  `],
-  imports: [ChatComponent, RouterOutlet]
+  standalone: true,
+  imports: [RouterOutlet, FloatingRobotComponent, ChatOverlayComponent],
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.scss'
 })
 export class App {
   protected title = 'angular-chat-25';
