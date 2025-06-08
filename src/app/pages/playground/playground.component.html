@@ -1,0 +1,117 @@
+<app-header></app-header>
+
+<main class="main-content">
+  <!-- Hero Section -->
+  <section class="playground-hero">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+          <h1 class="hero-title">
+            AI <span class="text-gradient">Chat Demo</span>
+          </h1>
+          <p class="hero-subtitle">
+            Interactive chat interface with configurable AI personalities 
+            and real-time streaming responses.
+          </p>
+          <div class="hero-badge">
+            <span class="badge bg-primary">Powered by Gemini 2.0 Flash</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Grid -->
+  <section class="features-section section-modern">
+    <div class="container">
+      <div class="row">
+        <div class="col-12 text-center mb-5">
+          <h2 class="section-title">Features</h2>
+          <p class="section-subtitle">
+            What you can test in this chat interface
+          </p>
+        </div>
+      </div>
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-3" *ngFor="let feature of features">
+          <div class="feature-card card-modern h-100">
+            <div class="feature-icon">{{ feature.icon }}</div>
+            <h5 class="feature-title">{{ feature.title }}</h5>
+            <p class="feature-description">{{ feature.description }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Instructions Section -->
+  <section class="instructions-section section-modern">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <div class="instructions-card card-modern">
+            <h3 class="instructions-title">How to Use the AI Playground</h3>
+            <div class="instructions-list">
+              <div class="instruction-item">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                  <h5>Find the Chat Widget</h5>
+                  <p>Look for the floating robot button in the bottom-right corner of the screen.</p>
+                </div>
+              </div>
+              <div class="instruction-item">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                  <h5>Choose an AI Personality</h5>
+                  <p>Select from Helpful Assistant, Technical Expert, Creative Assistant, Patient Teacher, or create your own custom prompt.</p>
+                </div>
+              </div>
+              <div class="instruction-item">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                  <h5>Start Conversations</h5>
+                  <p>Ask questions, request help with coding, brainstorm ideas, or explore any topic you're curious about.</p>
+                </div>
+              </div>
+              <div class="instruction-item">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                  <h5>Toggle Streaming Mode</h5>
+                  <p>Switch between streaming (real-time) and standard responses to see the difference in experience.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Call to Action -->
+  <section class="cta-section section-modern">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-6 text-center">
+          <div class="cta-content">
+            <div class="cta-icon">🚀</div>
+            <h2 class="cta-title">Ready to Start?</h2>
+            <p class="cta-description">
+              Click the robot button below to begin your AI exploration journey!
+            </p>
+            <div class="cta-arrow">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M19 12l-7 7-7-7"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Chat Widget Components -->
+<app-floating-robot></app-floating-robot>
+<app-chat-overlay></app-chat-overlay>
+
+<app-footer></app-footer>

@@ -79,7 +79,7 @@ h1, h2, h3 {
 // Card header styling
 .card-header {
   background: linear-gradient(135deg, #007bff, #0056b3);
-  color: white;
+  color: var(--color-white);
   border: none;
 
   h5 {

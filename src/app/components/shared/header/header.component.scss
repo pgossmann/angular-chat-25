@@ -1,0 +1,99 @@
+.navbar {
+    background: rgba(46, 39, 40, 0.95) !important;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem 0;
+    transition: all 0.3s ease;
+  
+    .navbar-brand {
+      font-weight: 700;
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--color-white) !important;
+      text-decoration: none;
+      transition: all 0.3s ease;
+  
+      &:hover {
+        transform: scale(1.05);
+      }
+  
+      .brand-icon {
+        font-size: 2rem;
+        animation: float 3s ease-in-out infinite;
+      }
+  
+      .brand-text {
+        background: linear-gradient(135deg, #fc7462 0%, #f1bad5 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+    }
+  
+    .navbar-nav {
+      .nav-link {
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.8) !important;
+        margin: 0 0.5rem;
+        padding: 0.5rem 1rem !important;
+        border-radius: 25px;
+        transition: all 0.3s ease;
+        position: relative;
+  
+        &:hover {
+          color: var(--color-white) !important;
+          background: rgba(255, 255, 255, 0.1);
+          transform: translateY(-2px);
+        }
+  
+        &.active {
+          color: var(--color-white) !important;
+          
+          &::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            background: #fc7462;
+            border-radius: 50%;
+          }
+        }
+      }
+    }
+  
+    .navbar-toggler {
+      border: none;
+      padding: 0.25rem 0.5rem;
+      
+      &:focus {
+        box-shadow: none;
+      }
+  
+      .navbar-toggler-icon {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.8%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+      }
+    }
+  }
+  
+  // Mobile menu animation
+  @media (max-width: 991.98px) {
+    .navbar-collapse {
+      background: rgba(46, 39, 40, 0.98);
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  }
+  
+  // Floating animation
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+  }
