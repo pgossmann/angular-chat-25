@@ -23,11 +23,13 @@
       <div class="chat-controls">
         <div class="row g-2 align-items-center">
           <div class="col">
+            <label for="promptSelect" class="form-label mb-1 small">Assistant Role:</label>
             <select 
+              id="promptSelect"
               class="form-select form-select-sm" 
               [(ngModel)]="selectedPromptType"
               (change)="onPromptTypeChange()">
-              <option *ngFor="let prompt of availablePrompts" [value]="prompt.id">
+              <option *ngFor="let prompt of availablePrompts()" [value]="prompt.id">
                 {{ prompt.name }}
               </option>
             </select>
@@ -43,10 +45,28 @@
             </button>
           </div>
         </div>
+
+        <!-- Streaming Toggle -->
+        <div class="row g-2 align-items-center mt-2">
+          <div class="col">
+            <div class="form-check form-switch">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="streamingToggle"
+                [(ngModel)]="useStreaming">
+              <label class="form-check-label small" for="streamingToggle">
+                {{ useStreaming ? '🌊 Streaming Mode' : '📦 Standard Mode' }}
+              </label>
+            </div>
+          </div>
+        </div>
         
         <!-- Custom Prompt Input -->
         <div class="mt-2" *ngIf="selectedPromptType === 'custom'">
+          <label for="customPrompt" class="form-label mb-1 small">Custom System Prompt:</label>
           <textarea 
+            id="customPrompt"
             class="form-control form-control-sm"
             [(ngModel)]="customPrompt"
             placeholder="Enter your custom system prompt..."
@@ -64,6 +84,8 @@
           </div>
           <h6>{{ appearance().subtitle }}</h6>
           <p class="text-muted small">Ask me anything! I'm here to help.</p>
+          <p class="text-muted small">Current role: <strong>{{ getCurrentPromptName() }}</strong></p>
+          <p class="text-muted small">Mode: <strong>{{ useStreaming ? 'Streaming' : 'Standard' }}</strong></p>
         </div>
   
         <!-- Messages -->
@@ -92,6 +114,7 @@
               </div>
               <div class="message-time">
                 {{ message.timestamp | date:'short' }}
+                <span *ngIf="message.isStreaming" class="text-muted ms-1">(streaming...)</span>
               </div>
             </div>
           </div>
@@ -137,7 +160,9 @@
             {{ currentMessage.length }}/2000 characters • Enter to send, Shift+Enter for new line
           </small>
           @if (isLoading()) {
-            <small class="text-primary">AI is thinking...</small>
+            <small class="text-primary">
+              {{ useStreaming ? 'AI is streaming response...' : 'AI is thinking...' }}
+            </small>
           }
         </div>
       </div>

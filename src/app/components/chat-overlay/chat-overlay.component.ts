@@ -27,9 +27,10 @@ export class ChatOverlayComponent implements AfterViewChecked {
   currentMessage = '';
   selectedPromptType = 'helpful';
   customPrompt = '';
+  useStreaming = true; // Toggle for streaming vs non-streaming
 
-  // Available prompt templates
-  availablePrompts = this.chatService.getAvailablePrompts();
+  // REACTIVE PROMPTS
+  availablePrompts = this.chatService.availablePrompts;
 
   ngAfterViewChecked() {
     this.scrollToBottom();
@@ -58,7 +59,12 @@ export class ChatOverlayComponent implements AfterViewChecked {
     const message = this.currentMessage.trim();
     this.currentMessage = '';
 
-    await this.chatService.sendMessage(message);
+    // Choose streaming or non-streaming based on toggle
+    if (this.useStreaming) {
+      await this.chatService.sendStreamingMessage(message);
+    } else {
+      await this.chatService.sendMessage(message);
+    }
   }
 
   clearChat(): void {
@@ -67,6 +73,10 @@ export class ChatOverlayComponent implements AfterViewChecked {
 
   onPromptTypeChange(): void {
     this.chatService.setSystemPrompt(this.selectedPromptType);
+  }
+
+  toggleStreaming(): void {
+    this.useStreaming = !this.useStreaming;
   }
 
   private scrollToBottom(): void {
@@ -81,7 +91,7 @@ export class ChatOverlayComponent implements AfterViewChecked {
 
   // Helper method to get current prompt name
   getCurrentPromptName(): string {
-    const prompt = this.availablePrompts.find(p => p.id === this.selectedPromptType);
+    const prompt = this.availablePrompts().find(p => p.id === this.selectedPromptType);
     return prompt?.name || 'Assistant';
   }
 

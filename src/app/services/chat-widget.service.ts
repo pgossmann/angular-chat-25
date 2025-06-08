@@ -3,7 +3,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { Message, MessageHistory } from '../models/message.model';
 import { ChatConfig, WidgetAppearance, SystemPromptConfig, DEFAULT_CHAT_CONFIG, DEFAULT_APPEARANCE, PromptTemplate } from '../models/chat-config.model';
 import { User, ChatSession, DEFAULT_USER_PREFERENCES } from '../models/user.model';
-import { SecureChatService } from './secure-chat.service';
+import { ChatRequest, StreamingChatService } from './streaming-chat.service';
 
 @Injectable({
   providedIn: 'root'
@@ -33,13 +33,20 @@ export class ChatWidgetService {
   });
 
   // System prompts configuration - now loaded from server
-  private availablePrompts = signal<PromptTemplate[]>([]);
+  private _availablePrompts = signal<PromptTemplate[]>([]);
+
+  // PUBLIC REACTIVE PROMPTS
+  readonly availablePrompts = computed(() => this._availablePrompts());
+
   private selectedSystemPrompt = 'helpful';
 
   // Session management
   private currentSessionId: string = this.generateSessionId();
 
-  constructor(private secureChatService: SecureChatService) {
+  // Track current streaming message
+  private currentStreamingMessageId: string | null = null;
+
+  constructor(private streamingChatService: StreamingChatService) {
     this.initializeDefaultUser();
     this.loadPromptTemplates();
   }
@@ -61,7 +68,86 @@ export class ChatWidgetService {
     this._isOpen.set(false);
   }
 
-  // Message management
+  // STREAMING MESSAGE MANAGEMENT
+  async sendStreamingMessage(content: string): Promise<void> {
+    if (!content.trim() || this._isLoading()) return;
+
+    // Add user message
+    const userMessage: Message = {
+      id: this.generateMessageId(),
+      content: content.trim(),
+      isUser: true,
+      timestamp: new Date()
+    };
+
+    this.addMessage(userMessage);
+    this._isLoading.set(true);
+
+    // Create AI message placeholder
+    const aiMessage: Message = {
+      id: this.generateMessageId(),
+      content: '',
+      isUser: false,
+      timestamp: new Date(),
+      isStreaming: true
+    };
+
+    this.addMessage(aiMessage);
+    this.currentStreamingMessageId = aiMessage.id;
+
+    try {
+      // Prepare conversation history for context
+      const conversationHistory = this._messages()
+        .filter(m => !m.isStreaming && !m.error)
+        .slice(-6)
+        .map(m => ({
+          content: m.content,
+          isUser: m.isUser,
+          timestamp: m.timestamp
+        }));
+
+      // Create streaming request
+      const request: ChatRequest = {
+        message: content,
+        promptType: this.selectedSystemPrompt,
+        conversationHistory
+      };
+
+      // Start streaming with callbacks
+      await this.streamingChatService.createStreamingChat(
+        request,
+        // onChunk callback
+        (chunk: string) => {
+          aiMessage.content += chunk;
+          this.updateMessage(aiMessage);
+        },
+        // onComplete callback
+        () => {
+          aiMessage.isStreaming = false;
+          this.updateMessage(aiMessage);
+          this.currentStreamingMessageId = null;
+          this._isLoading.set(false);
+
+          // Mark as unread if widget is closed
+          if (!this._isOpen()) {
+            this._hasUnreadMessages.set(true);
+          }
+        },
+        // onError callback
+        (error: string) => {
+          this.handleStreamingError(aiMessage.id, error);
+          this._isLoading.set(false);
+        }
+      );
+
+    } catch (error: any) {
+      console.error('Streaming chat error:', error);
+      this.handleStreamingError(aiMessage.id, error.message);
+      this._isLoading.set(false);
+    }
+  }
+
+  // FALLBACK NON-STREAMING MESSAGE
   async sendMessage(content: string): Promise<void> {
     if (!content.trim() || this._isLoading()) return;
 
@@ -98,8 +184,8 @@ export class ChatWidgetService {
           timestamp: m.timestamp
         }));
 
-      // Send secure chat request
-      const response = await this.secureChatService.sendMessage({
+      // Send non-streaming request
+      const response = await this.streamingChatService.sendMessage({
         message: content,
         promptType: this.selectedSystemPrompt,
         conversationHistory
@@ -117,20 +203,29 @@ export class ChatWidgetService {
 
     } catch (error: any) {
       console.error('Chat error:', error);
-      const errorMessage: Message = {
-        id: this.generateMessageId(),
-        content: `Sorry, I encountered an error: ${error.message}`,
-        isUser: false,
-        timestamp: new Date(),
-        error: true
-      };
-      
-      // Remove the streaming placeholder and add error message
-      this._messages.update(current => current.filter(m => !m.isStreaming));
-      this.addMessage(errorMessage);
+      this.handleStreamingError(this.currentStreamingMessageId, error.message);
     } finally {
       this._isLoading.set(false);
     }
+  }
+
+  private handleStreamingError(messageId: string | null, errorMessage: string): void {
+    if (messageId) {
+      // Remove the streaming placeholder
+      this._messages.update(current => current.filter(m => m.id !== messageId));
+    }
+
+    // Add error message
+    const errorMsg: Message = {
+      id: this.generateMessageId(),
+      content: `Sorry, I encountered an error: ${errorMessage}`,
+      isUser: false,
+      timestamp: new Date(),
+      error: true
+    };
+
+    this.addMessage(errorMsg);
+    this.currentStreamingMessageId = null;
   }
 
   private addMessage(message: Message): void {
@@ -142,7 +237,7 @@ export class ChatWidgetService {
   }
 
   private updateMessage(updatedMessage: Message): void {
-    this._messages.update(current => 
+    this._messages.update(current =>
       current.map(msg => msg.id === updatedMessage.id ? { ...updatedMessage } : msg)
     );
   }
@@ -150,11 +245,12 @@ export class ChatWidgetService {
   clearMessages(): void {
     this._messages.set([]);
     this.currentSessionId = this.generateSessionId();
+    this.currentStreamingMessageId = null;
   }
 
   // System prompt management
   setSystemPrompt(promptType: string): void {
-    const availablePromptIds = this.availablePrompts().map(p => p.id);
+    const availablePromptIds = this._availablePrompts().map(p => p.id);
     if (availablePromptIds.includes(promptType) || promptType === 'custom') {
       this.selectedSystemPrompt = promptType;
     } else {
@@ -165,7 +261,6 @@ export class ChatWidgetService {
 
   setCustomSystemPrompt(prompt: string): void {
     // Store custom prompt - this will be sent to server when promptType is 'custom'
-    // Note: Server should handle the actual custom prompt logic
     console.log('Custom prompt set:', prompt);
   }
 
@@ -173,20 +268,33 @@ export class ChatWidgetService {
     return this.selectedSystemPrompt;
   }
 
+  // DEPRECATED: Keep for backward compatibility
   getAvailablePrompts(): PromptTemplate[] {
-    return this.availablePrompts();
+    return this._availablePrompts();
   }
 
   // Load prompt templates from server
   private async loadPromptTemplates(): Promise<void> {
     try {
-      const templates = await this.secureChatService.getPromptTemplates();
-      this.availablePrompts.set(templates);
+      const templates = await this.streamingChatService.getPromptTemplates();
+
+      // Add custom option to server templates
+      const allTemplates = [
+        ...templates,
+        { id: 'custom', name: 'Custom Prompt', description: 'Use your own system prompt' }
+      ];
+
+      // UPDATE THE SIGNAL - this will trigger reactivity
+      this._availablePrompts.set(allTemplates);
     } catch (error) {
       console.error('Failed to load prompt templates:', error);
       // Use fallback templates
-      this.availablePrompts.set([
-        { id: 'helpful', name: 'Helpful Assistant', description: 'General purpose assistant' }
+      this._availablePrompts.set([
+        { id: 'helpful', name: 'Helpful Assistant', description: 'General purpose assistant' },
+        { id: 'expert', name: 'Technical Expert', description: 'Technical expertise' },
+        { id: 'creative', name: 'Creative Assistant', description: 'Creative solutions' },
+        { id: 'teacher', name: 'Patient Teacher', description: 'Educational guidance' },
+        { id: 'custom', name: 'Custom Prompt', description: 'Use your own system prompt' }
       ]);
     }
   }
@@ -228,7 +336,7 @@ export class ChatWidgetService {
     return {
       messages: this._messages(),
       sessionId: this.currentSessionId,
-      createdAt: new Date(), // Would be actual session start time
+      createdAt: new Date(),
       updatedAt: new Date()
     };
   }
@@ -241,7 +349,7 @@ export class ChatWidgetService {
   // Health check method for monitoring
   async checkServiceHealth(): Promise<boolean> {
     try {
-      await this.secureChatService.healthCheck();
+      await this.streamingChatService.healthCheck();
       return true;
     } catch (error) {
       console.error('Service health check failed:', error);

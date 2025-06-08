@@ -1,7 +1,8 @@
-import { onCall, CallableRequest, HttpsError } from 'firebase-functions/v2/https';
+import { onRequest } from 'firebase-functions/v2/https';
 import { initializeApp } from 'firebase-admin/app';
 import { getAI, getGenerativeModel, GoogleAIBackend } from 'firebase/ai';
 import { initializeApp as initializeClientApp } from 'firebase/app';
+import cors from 'cors';
 
 // Initialize Firebase Admin
 initializeApp();
@@ -85,7 +86,7 @@ const rateLimitMap = new Map();
 function checkRateLimit(identifier: string, isAuthenticated: boolean): boolean {
     const now = Date.now();
     const limit = rateLimitMap.get(identifier);
-    
+
     // Different limits for authenticated vs anonymous users
     const maxRequests = isAuthenticated ? 30 : 5; // Auth users get more requests
     const windowMs = 60000; // 1 minute
@@ -102,151 +103,251 @@ function checkRateLimit(identifier: string, isAuthenticated: boolean): boolean {
 }
 
 // 🔐 DOMAIN VALIDATION (additional security layer)
-function validateOrigin(request: CallableRequest): void {
+function validateOrigin(request: any): void {
     const allowedOrigins = [
         'https://pgossmann.github.io',
         'http://localhost:4200',
         'http://localhost:3000'
     ];
-    
-    const origin = request.rawRequest.get('origin');
+
+    const origin = request.get('origin');
     if (origin && !allowedOrigins.includes(origin)) {
-        throw new HttpsError('permission-denied', 'Invalid origin');
+        throw new Error('Invalid origin');
     }
 }
 
-// 🚀 SECURE CHAT FUNCTION
-export const secureChat = onCall(
+// Configure CORS
+const corsHandler = cors({
+    origin: [
+        'https://pgossmann.github.io',
+        'http://localhost:4200',
+        'http://localhost:3000'
+    ],
+    credentials: true
+});
+
+// 🚀 STREAMING CHAT ENDPOINT
+export const streamChat = onRequest(
     {
-        cors: [
-            "https://pgossmann.github.io",
-            "http://localhost:4200",
-            "http://localhost:3000"
-        ],
-        enforceAppCheck: false, // Can enable for extra security
-        region: 'us-central1'
+        region: 'us-central1',
+        cors: true
     },
-    async (request: CallableRequest) => {
-        try {
-            // 🛡️ DOMAIN VALIDATION
-            validateOrigin(request);
+    async (request, response) => {
+        // Handle CORS
+        corsHandler(request, response, async () => {
+            try {
+                // Only allow POST requests
+                if (request.method !== 'POST') {
+                    response.status(405).json({ error: 'Method not allowed' });
+                    return;
+                }
 
-            const { message, promptType = 'helpful', conversationHistory = [] } = request.data;
+                // 🛡️ DOMAIN VALIDATION
+                validateOrigin(request);
 
-            // Basic validation
-            if (!message || typeof message !== 'string') {
-                throw new HttpsError('invalid-argument', 'Message is required');
+                const { message, promptType = 'helpful', conversationHistory = [] } = request.body;
+
+                // Basic validation
+                if (!message || typeof message !== 'string') {
+                    response.status(400).json({ error: 'Message is required' });
+                    return;
+                }
+
+                if (message.length > 2000) {
+                    response.status(400).json({ error: 'Message too long' });
+                    return;
+                }
+
+                // 🛡️ RATE LIMITING
+                const identifier = request.ip || 'anonymous';
+                const isAuthenticated = false; // You can implement auth later
+
+                if (!checkRateLimit(identifier, isAuthenticated)) {
+                    response.status(429).json({ error: 'Rate limit exceeded. Please try again later.' });
+                    return;
+                }
+
+                // Get system prompt
+                const systemConfig = SYSTEM_PROMPTS[promptType];
+                if (!systemConfig) {
+                    response.status(400).json({ error: 'Invalid prompt type' });
+                    return;
+                }
+
+                // 🔒 INPUT SANITIZATION
+                const sanitizedMessage = message.trim().substring(0, 2000);
+
+                // Build prompt
+                let fullPrompt = systemConfig.prompt;
+
+                // Add context if available (limit context size)
+                if (conversationHistory.length > 0) {
+                    const recent = conversationHistory
+                        .slice(-3) // Only last 3 messages
+                        .filter((msg: any) => msg.content && msg.content.length < 500)
+                        .map((msg: any) => `${msg.isUser ? 'User' : 'Assistant'}: ${msg.content}`)
+                        .join('\n');
+                    fullPrompt += `\n\nContext:\n${recent}`;
+                }
+
+                fullPrompt += `\n\nUser: ${sanitizedMessage}\n\nAssistant:`;
+
+                // 🌊 SET UP STREAMING RESPONSE
+                response.setHeader('Content-Type', 'text/plain; charset=utf-8');
+                response.setHeader('Cache-Control', 'no-cache');
+                response.setHeader('Connection', 'keep-alive');
+
+                // Generate streaming response
+                try {
+                    const result = await model.generateContentStream(fullPrompt);
+
+                    for await (const chunk of result.stream) {
+                        const chunkText = chunk.text();
+                        if (chunkText) {
+                            response.write(chunkText);
+                        }
+                    }
+
+                    response.end();
+                } catch (streamError) {
+                    console.error('Streaming error:', streamError);
+                    response.write('\n\n[Error: Failed to generate response]');
+                    response.end();
+                }
+
+                // 📊 USAGE LOGGING
+                console.log(`Streaming chat request - IP: ${identifier}, Auth: ${isAuthenticated}, Prompt: ${promptType}`);
+
+            } catch (error: any) {
+                console.error('Chat error:', error);
+
+                if (!response.headersSent) {
+                    response.status(500).json({ error: 'Server error occurred' });
+                }
             }
+        });
+    }
+);
 
-            if (message.length > 2000) {
-                throw new HttpsError('invalid-argument', 'Message too long');
+// 🚀 NON-STREAMING CHAT ENDPOINT (Fallback)
+export const chat = onRequest(
+    {
+        region: 'us-central1',
+        cors: true
+    },
+    async (request, response) => {
+        corsHandler(request, response, async () => {
+            try {
+                if (request.method !== 'POST') {
+                    response.status(405).json({ error: 'Method not allowed' });
+                    return;
+                }
+
+                validateOrigin(request);
+
+                const { message, promptType = 'helpful', conversationHistory = [] } = request.body;
+
+                if (!message || typeof message !== 'string') {
+                    response.status(400).json({ error: 'Message is required' });
+                    return;
+                }
+
+                if (message.length > 2000) {
+                    response.status(400).json({ error: 'Message too long' });
+                    return;
+                }
+
+                const identifier = request.ip || 'anonymous';
+                if (!checkRateLimit(identifier, false)) {
+                    response.status(429).json({ error: 'Rate limit exceeded' });
+                    return;
+                }
+
+                const systemConfig = SYSTEM_PROMPTS[promptType];
+                if (!systemConfig) {
+                    response.status(400).json({ error: 'Invalid prompt type' });
+                    return;
+                }
+
+                const sanitizedMessage = message.trim().substring(0, 2000);
+                let fullPrompt = systemConfig.prompt;
+
+                if (conversationHistory.length > 0) {
+                    const recent = conversationHistory
+                        .slice(-3)
+                        .filter((msg: any) => msg.content && msg.content.length < 500)
+                        .map((msg: any) => `${msg.isUser ? 'User' : 'Assistant'}: ${msg.content}`)
+                        .join('\n');
+                    fullPrompt += `\n\nContext:\n${recent}`;
+                }
+
+                fullPrompt += `\n\nUser: ${sanitizedMessage}\n\nAssistant:`;
+
+                const result = await model.generateContent(fullPrompt);
+                const responseText = result.response.text();
+
+                response.json({
+                    response: responseText,
+                    promptType: systemConfig.name,
+                    timestamp: new Date().toISOString(),
+                    success: true
+                });
+
+                console.log(`Chat request - IP: ${identifier}, Prompt: ${promptType}`);
+
+            } catch (error: any) {
+                console.error('Chat error:', error);
+                response.status(500).json({ error: 'Server error occurred' });
             }
-
-            // 🛡️ RATE LIMITING
-            const isAuthenticated = !!request.auth;
-            const identifier = request.auth?.uid || request.rawRequest.ip || 'anonymous';
-            
-            if (!checkRateLimit(identifier, isAuthenticated)) {
-                throw new HttpsError('resource-exhausted', 'Rate limit exceeded. Please try again later.');
-            }
-
-            // Get system prompt
-            const systemConfig = SYSTEM_PROMPTS[promptType];
-            if (!systemConfig) {
-                throw new HttpsError('invalid-argument', 'Invalid prompt type');
-            }
-
-            // 🔒 INPUT SANITIZATION
-            const sanitizedMessage = message.trim().substring(0, 2000);
-
-            // Build prompt
-            let fullPrompt = systemConfig.prompt;
-
-            // Add context if available (limit context size)
-            if (conversationHistory.length > 0) {
-                const recent = conversationHistory
-                    .slice(-3) // Only last 3 messages
-                    .filter((msg: any) => msg.content && msg.content.length < 500)
-                    .map((msg: any) => `${msg.isUser ? 'User' : 'Assistant'}: ${msg.content}`)
-                    .join('\n');
-                fullPrompt += `\n\nContext:\n${recent}`;
-            }
-
-            fullPrompt += `\n\nUser: ${sanitizedMessage}\n\nAssistant:`;
-
-            // Generate response
-            const result = await model.generateContent(fullPrompt);
-            const response = result.response.text();
-
-            // 📊 USAGE LOGGING
-            console.log(`Chat request - User: ${identifier}, Auth: ${isAuthenticated}, Prompt: ${promptType}`);
-
-            return {
-                response,
-                promptType: systemConfig.name,
-                timestamp: new Date().toISOString(),
-                success: true,
-                authenticated: isAuthenticated
-            };
-
-        } catch (error: any) {
-            console.error('Chat error:', error);
-
-            if (error instanceof HttpsError) {
-                throw error;
-            }
-
-            throw new HttpsError('internal', 'Server error occurred');
-        }
+        });
     }
 );
 
 // Get available prompts (no auth required, but rate limited)
-export const getPromptTemplates = onCall(
+export const getPromptTemplates = onRequest(
     {
-        cors: [
-            "https://pgossmann.github.io",
-            "http://localhost:4200",
-            "http://localhost:3000"
-        ],
-        region: 'us-central1'
+        region: 'us-central1',
+        cors: true
     },
-    async (request: CallableRequest) => {
-        // 🛡️ DOMAIN VALIDATION
-        validateOrigin(request);
+    async (request, response) => {
+        corsHandler(request, response, async () => {
+            try {
+                validateOrigin(request);
 
-        // 🛡️ RATE LIMITING
-        const identifier = request.auth?.uid || request.rawRequest.ip || 'anonymous';
-        if (!checkRateLimit(`templates_${identifier}`, !!request.auth)) {
-            throw new HttpsError('resource-exhausted', 'Rate limit exceeded');
-        }
+                const identifier = request.ip || 'anonymous';
+                if (!checkRateLimit(`templates_${identifier}`, false)) {
+                    response.status(429).json({ error: 'Rate limit exceeded' });
+                    return;
+                }
 
-        return {
-            templates: Object.keys(SYSTEM_PROMPTS).map(key => ({
-                id: key,
-                name: SYSTEM_PROMPTS[key].name,
-                description: `${SYSTEM_PROMPTS[key].name} for various tasks`
-            }))
-        };
+                response.json({
+                    templates: Object.keys(SYSTEM_PROMPTS).map(key => ({
+                        id: key,
+                        name: SYSTEM_PROMPTS[key].name,
+                        description: `${SYSTEM_PROMPTS[key].name} for various tasks`
+                    }))
+                });
+
+            } catch (error) {
+                console.error('Templates error:', error);
+                response.status(500).json({ error: 'Server error occurred' });
+            }
+        });
     }
 );
 
-// Health check (minimal rate limiting)
-export const healthCheck = onCall(
+// Health check
+export const healthCheck = onRequest(
     {
-        cors: [
-            "https://pgossmann.github.io",
-            "http://localhost:4200",
-            "http://localhost:3000"
-        ],
-        region: 'us-central1'
+        region: 'us-central1',
+        cors: true
     },
-    async (request: CallableRequest) => {
-        return {
+    async (request, response) => {
+        response.json({
             status: 'ok',
             timestamp: new Date().toISOString(),
             version: '1.0.0',
             region: 'us-central1'
-        };
+        });
     }
 );
