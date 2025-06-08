@@ -3,7 +3,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { Message, MessageHistory } from '../models/message.model';
 import { ChatConfig, WidgetAppearance, SystemPromptConfig, DEFAULT_CHAT_CONFIG, DEFAULT_APPEARANCE, PromptTemplate } from '../models/chat-config.model';
 import { User, ChatSession, DEFAULT_USER_PREFERENCES } from '../models/user.model';
-import { AiService } from '../ai';
+import { SecureChatService } from './secure-chat.service';
 
 @Injectable({
   providedIn: 'root'
@@ -32,22 +32,16 @@ export class ChatWidgetService {
     return msgs.length > 0 ? msgs[msgs.length - 1] : null;
   });
 
-  // System prompts configuration
-  private systemPrompts: { [key: string]: string } = {
-    helpful: "You are a helpful, friendly, and knowledgeable AI assistant. Provide clear, accurate, and useful responses. Be concise but thorough.",
-    expert: "You are a technical expert with deep knowledge across multiple domains. Provide detailed, accurate technical information. Use examples and explain complex concepts clearly.",
-    creative: "You are a creative AI assistant who thinks outside the box. Be imaginative, inspiring, and help users explore creative solutions. Use metaphors and storytelling when appropriate.",
-    teacher: "You are a patient and encouraging teacher. Break down complex topics into simple steps. Always ask if the user understands and needs clarification. Use analogies to explain difficult concepts."
-  };
-
+  // System prompts configuration - now loaded from server
+  private availablePrompts = signal<PromptTemplate[]>([]);
   private selectedSystemPrompt = 'helpful';
-  private customSystemPrompt = '';
 
   // Session management
   private currentSessionId: string = this.generateSessionId();
 
-  constructor(private aiService: AiService) {
+  constructor(private secureChatService: SecureChatService) {
     this.initializeDefaultUser();
+    this.loadPromptTemplates();
   }
 
   // Widget state management
@@ -94,18 +88,25 @@ export class ChatWidgetService {
 
       this.addMessage(aiMessage);
 
-      // Build enhanced prompt
-      const enhancedPrompt = this.buildEnhancedPrompt(content);
+      // Prepare conversation history for context
+      const conversationHistory = this._messages()
+        .filter(m => !m.isStreaming && !m.error)
+        .slice(-6)
+        .map(m => ({
+          content: m.content,
+          isUser: m.isUser,
+          timestamp: m.timestamp
+        }));
 
-      // Stream the response
-      const stream = await this.aiService.generateStreamResponse(enhancedPrompt);
-      
-      for await (const chunk of stream) {
-        aiMessage.content += chunk;
-        this.updateMessage(aiMessage);
-      }
+      // Send secure chat request
+      const response = await this.secureChatService.sendMessage({
+        message: content,
+        promptType: this.selectedSystemPrompt,
+        conversationHistory
+      });
 
-      // Mark streaming as complete
+      // Update AI message with response
+      aiMessage.content = response.response;
       aiMessage.isStreaming = false;
       this.updateMessage(aiMessage);
 
@@ -123,6 +124,9 @@ export class ChatWidgetService {
         timestamp: new Date(),
         error: true
       };
+      
+      // Remove the streaming placeholder and add error message
+      this._messages.update(current => current.filter(m => !m.isStreaming));
       this.addMessage(errorMessage);
     } finally {
       this._isLoading.set(false);
@@ -150,48 +154,41 @@ export class ChatWidgetService {
 
   // System prompt management
   setSystemPrompt(promptType: string): void {
-    this.selectedSystemPrompt = promptType;
+    const availablePromptIds = this.availablePrompts().map(p => p.id);
+    if (availablePromptIds.includes(promptType) || promptType === 'custom') {
+      this.selectedSystemPrompt = promptType;
+    } else {
+      console.warn(`Invalid prompt type: ${promptType}. Using default 'helpful'.`);
+      this.selectedSystemPrompt = 'helpful';
+    }
   }
 
   setCustomSystemPrompt(prompt: string): void {
-    this.customSystemPrompt = prompt;
+    // Store custom prompt - this will be sent to server when promptType is 'custom'
+    // Note: Server should handle the actual custom prompt logic
+    console.log('Custom prompt set:', prompt);
+  }
+
+  getCurrentSystemPrompt(): string {
+    return this.selectedSystemPrompt;
   }
 
   getAvailablePrompts(): PromptTemplate[] {
-    return [
-      { id: 'helpful', name: 'Helpful Assistant', description: 'General purpose helpful AI assistant' },
-      { id: 'expert', name: 'Technical Expert', description: 'Deep technical knowledge and expertise' },
-      { id: 'creative', name: 'Creative Writer', description: 'Creative and imaginative responses' },
-      { id: 'teacher', name: 'Patient Teacher', description: 'Educational and step-by-step explanations' },
-      { id: 'custom', name: 'Custom', description: 'Your own custom system prompt' }
-    ];
+    return this.availablePrompts();
   }
 
-  private buildEnhancedPrompt(userInput: string): string {
-    let prompt = '';
-
-    // Get system prompt
-    const systemPrompt = this.selectedSystemPrompt === 'custom' 
-      ? this.customSystemPrompt 
-      : this.systemPrompts[this.selectedSystemPrompt];
-    
-    prompt += systemPrompt;
-
-    // Add conversation context (last 6 messages)
-    const recentMessages = this._messages()
-      .filter(m => !m.isStreaming && !m.error)
-      .slice(-6)
-      .map(m => `${m.isUser ? 'User' : 'Assistant'}: ${m.content}`)
-      .join('\n');
-    
-    if (recentMessages) {
-      prompt += `\n\nRecent conversation context:\n${recentMessages}`;
+  // Load prompt templates from server
+  private async loadPromptTemplates(): Promise<void> {
+    try {
+      const templates = await this.secureChatService.getPromptTemplates();
+      this.availablePrompts.set(templates);
+    } catch (error) {
+      console.error('Failed to load prompt templates:', error);
+      // Use fallback templates
+      this.availablePrompts.set([
+        { id: 'helpful', name: 'Helpful Assistant', description: 'General purpose assistant' }
+      ]);
     }
-
-    // Add current user input
-    prompt += `\n\nUser: ${userInput}\n\nAssistant:`;
-
-    return prompt;
   }
 
   // Configuration management
@@ -239,5 +236,16 @@ export class ChatWidgetService {
   importChatHistory(history: MessageHistory): void {
     this._messages.set(history.messages);
     this.currentSessionId = history.sessionId;
+  }
+
+  // Health check method for monitoring
+  async checkServiceHealth(): Promise<boolean> {
+    try {
+      await this.secureChatService.healthCheck();
+      return true;
+    } catch (error) {
+      console.error('Service health check failed:', error);
+      return false;
+    }
   }
 }
