@@ -2,7 +2,7 @@
     position: fixed;
     bottom: 90px;
     right: 24px;
-    width: 400px;
+    width: 500px; // Increased from 400px
     height: 600px;
     z-index: 1030;
     opacity: 0;
@@ -152,6 +152,141 @@
     }
   }
   
+  // MARKDOWN STYLING
+  .message-bubble {
+    ::ng-deep {
+      // Headers
+      h1, h2, h3, h4, h5, h6 {
+        margin: 0.5rem 0;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+  
+      h1 { font-size: 1.25rem; }
+      h2 { font-size: 1.1rem; }
+      h3 { font-size: 1rem; }
+      h4, h5, h6 { font-size: 0.95rem; }
+  
+      // Paragraphs
+      p {
+        margin: 0.5rem 0;
+        line-height: 1.5;
+  
+        &:first-child { margin-top: 0; }
+        &:last-child { margin-bottom: 0; }
+      }
+  
+      // Lists
+      ul, ol {
+        margin: 0.5rem 0;
+        padding-left: 1.5rem;
+        
+        li {
+          margin: 0.25rem 0;
+          line-height: 1.4;
+        }
+      }
+  
+      // Code blocks
+      pre {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        padding: 0.75rem;
+        margin: 0.5rem 0;
+        overflow-x: auto;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 0.85rem;
+        line-height: 1.4;
+  
+        code {
+          background: transparent;
+          border: none;
+          padding: 0;
+        }
+      }
+  
+      // Inline code
+      code {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 3px;
+        padding: 0.125rem 0.25rem;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 0.85rem;
+      }
+  
+      // Blockquotes
+      blockquote {
+        border-left: 4px solid #007bff;
+        margin: 0.5rem 0;
+        padding: 0.5rem 1rem;
+        background: #f8f9fa;
+        border-radius: 0 6px 6px 0;
+        
+        p {
+          margin: 0;
+        }
+      }
+  
+      // Tables
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 0.5rem 0;
+        font-size: 0.9rem;
+  
+        th, td {
+          border: 1px solid #dee2e6;
+          padding: 0.375rem 0.5rem;
+          text-align: left;
+        }
+  
+        th {
+          background: #f8f9fa;
+          font-weight: 600;
+        }
+      }
+  
+      // Links
+      a {
+        color: #007bff;
+        text-decoration: none;
+  
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+  
+      // Strong and emphasis
+      strong {
+        font-weight: 600;
+      }
+  
+      em {
+        font-style: italic;
+      }
+  
+      // Horizontal rules
+      hr {
+        border: none;
+        border-top: 1px solid #dee2e6;
+        margin: 1rem 0;
+      }
+    }
+  }
+  
+  // Responsive adjustments
+  @media (max-width: 580px) { // Updated for new width
+    .chat-overlay {
+      bottom: 80px;
+      right: 10px;
+      left: 10px;
+      width: auto;
+      height: 70vh;
+    }
+  }
+  
   .chat-input {
     background: white;
     padding: 1rem;
@@ -258,17 +393,6 @@
   @keyframes blink {
     0%, 50% { opacity: 1; }
     51%, 100% { opacity: 0; }
-  }
-  
-  // Responsive adjustments
-  @media (max-width: 480px) {
-    .chat-overlay {
-      bottom: 80px;
-      right: 10px;
-      left: 10px;
-      width: auto;
-      height: 70vh;
-    }
   }
   
   // Scrollbar styling

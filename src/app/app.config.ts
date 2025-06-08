@@ -4,6 +4,7 @@ import { provideFirebaseApp } from '@angular/fire/app';
 import { initializeApp } from "firebase/app";
 
 import { routes } from './app.routes';
+import { provideMarkdown, MarkedOptions } from 'ngx-markdown';
 
 // Direct Firebase configuration (API key is safe for web apps)
 export const firebaseConfig = {
@@ -21,6 +22,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideFirebaseApp(() => initializeApp(firebaseConfig))
+    provideFirebaseApp(() => initializeApp(firebaseConfig)),
+    provideMarkdown()
   ]
 };

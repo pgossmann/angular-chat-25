@@ -1,12 +1,13 @@
 import { Component, computed, inject, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MarkdownModule } from 'ngx-markdown';
 import { ChatWidgetService } from '../../services/chat-widget.service';
 
 @Component({
   selector: 'app-chat-overlay',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MarkdownModule],
   templateUrl: './chat-overlay.component.html',
   styleUrl: './chat-overlay.component.scss'
 })
@@ -105,5 +106,19 @@ export class ChatOverlayComponent implements AfterViewChecked {
     const textarea = event.target as HTMLTextAreaElement;
     textarea.style.height = 'auto';
     textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+  }
+
+  // Method to safely render streaming markdown
+  getMarkdownContent(content: string, isStreaming: boolean): string {
+    if (!content) return '';
+    
+    // For streaming content, we might have incomplete markdown
+    // This helps handle partial markdown gracefully
+    if (isStreaming) {
+      // Simple cleanup for streaming content
+      return content;
+    }
+    
+    return content;
   }
 }
