@@ -41,7 +41,8 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
       with:
-        path: './dist/angular-chat-25'
+        # Fix: Point to the correct browser output directory
+        path: './dist/angular-chat-25/browser'
 
   deploy:
     environment:
