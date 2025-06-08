@@ -528,3 +528,99 @@
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   }
 }
+
+// Add this to your chat-overlay.component.scss
+
+// Enhanced mobile styles to fix missing send button
+@media (max-width: 580px) {
+  .chat-overlay {
+    bottom: 0;
+    right: 0;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    
+    // Use dynamic viewport height to handle mobile browser chrome
+    height: 100dvh;
+    
+    .chat-container {
+      height: 100%;
+      border-radius: 0;
+      box-shadow: none;
+      
+      // Ensure proper flex layout
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .chat-messages {
+      // Allow messages to take remaining space
+      flex: 1;
+      overflow-y: auto;
+      // Add bottom padding to prevent overlap with input
+      padding-bottom: 1rem;
+    }
+    
+    .chat-input {
+      // Ensure input stays at bottom and visible
+      flex-shrink: 0;
+      background: white;
+      padding: 1rem;
+      border-top: 1px solid #dee2e6;
+      
+      // iOS safe area handling
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
+      
+      // Ensure it's above everything
+      position: relative;
+      z-index: 10;
+      
+      .input-actions {
+        margin-bottom: 0.5rem;
+        
+        .send-btn {
+          // Ensure button is visible and touchable
+          min-width: 44px;
+          min-height: 44px;
+          width: 44px;
+          height: 44px;
+        }
+      }
+      
+      .input-footer {
+        // Ensure footer text doesn't interfere
+        font-size: 0.7rem;
+        margin-top: 0.25rem;
+      }
+    }
+  }
+}
+
+// Specific fix for iOS devices
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 580px) {
+    .chat-overlay {
+      .chat-input {
+        // Additional iOS bottom padding
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom, 20px));
+      }
+    }
+  }
+}
+
+// Fix for when keyboard is open (viewport height changes)
+@media (max-width: 580px) and (max-height: 500px) {
+  .chat-overlay {
+    .chat-messages {
+      // Reduce messages area when keyboard is open
+      max-height: calc(100vh - 200px);
+    }
+    
+    .chat-input {
+      // Ensure input is still visible with keyboard
+      position: sticky;
+      bottom: 0;
+    }
+  }
+}
