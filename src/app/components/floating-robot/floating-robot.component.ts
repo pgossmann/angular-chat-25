@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ChatWidgetService } from '../../services/chat-widget.service';
 
@@ -18,12 +18,27 @@ export class FloatingRobotComponent {
   messageCount = this.chatService.messageCount;
   appearance = this.chatService.appearance;
   
+  // Check if we're on mobile
+  isMobile = computed(() => window.innerWidth <= 768);
+  
   // Show notification badge when there are unread messages
   showNotificationBadge = computed(() => 
     this.hasUnreadMessages() && !this.isOpen()
   );
 
+  // Hide robot on mobile when chat is open
+  shouldHideOnMobile = computed(() => 
+    this.isMobile() && this.isOpen()
+  );
+
   onRobotClick(): void {
     this.chatService.toggleWidget();
+  }
+
+  // Listen to window resize to update mobile state
+  @HostListener('window:resize', ['$event'])
+  onResize(event: any): void {
+    // Force re-computation of isMobile signal
+    // The computed signal will automatically update when window.innerWidth changes
   }
 }

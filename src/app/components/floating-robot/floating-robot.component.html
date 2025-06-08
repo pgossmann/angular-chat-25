@@ -1,5 +1,7 @@
 <!-- Floating Robot Button -->
-<div class="floating-robot-container">
+<div class="floating-robot-container" 
+     [class.chat-open-mobile]="shouldHideOnMobile()"
+     *ngIf="!shouldHideOnMobile()">
     <button 
       type="button"
       class="floating-robot-btn btn btn-primary rounded-circle shadow-lg"
@@ -22,4 +24,4 @@
         <span class="visually-hidden">New messages</span>
       </span>
     </button>
-  </div>
+</div>

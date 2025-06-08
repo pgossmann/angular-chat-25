@@ -1,160 +1,166 @@
 .floating-robot-container {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    z-index: 1040;
-    
-    .floating-robot-btn {
-      width: 60px;
-      height: 60px;
-      border: none;
-      background: var(--chat-robot-bg, #007bff);
-      position: relative;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      cursor: pointer;
-      overflow: hidden;
-      
-      &:hover {
-        transform: scale(1.1);
-        box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4) !important;
-      }
-      
-      &:focus {
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
-      }
-      
-      &.active {
-        background: var(--chat-danger, #dc3545);
-        transform: rotate(45deg);
-        
-        .robot-icon {
-          transform: rotate(-45deg);
-        }
-      }
-      
-      &.has-notifications {
-        animation: pulse 2s infinite;
-      }
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1020;
+
+  .floating-robot-btn {
+    width: 60px;
+    height: 60px;
+    border: none;
+    background: var(--robot-primary, #007bff);
+    color: white;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+
+    &:hover {
+      background: var(--robot-primary-hover, #0056b3);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+
+    &.active {
+      background: var(--robot-active, #dc3545);
       
       .robot-icon {
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        
-        .robot-emoji {
-          font-size: 28px;
-          line-height: 1;
-          display: block;
-        }
-        
-        &.rotated {
-          transform: rotate(45deg);
-        }
-      }
-      
-      .notification-badge {
-        .notification-pulse {
-          display: block;
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: currentColor;
-          animation: pulse-dot 1.5s ease-in-out infinite;
-        }
-      }
-      
-      .loading-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
+        transform: rotate(45deg);
       }
     }
-    
-    .floating-robot-tooltip {
-      position: absolute;
-      right: 70px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      padding: 8px 12px;
-      border-radius: 6px;
-      white-space: nowrap;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      pointer-events: none;
+
+    &.has-notifications {
+      animation: pulse 2s infinite;
+    }
+
+    .robot-icon {
+      transition: transform 0.3s ease;
       
-      &::after {
+      &.rotated {
+        transform: rotate(45deg);
+      }
+    }
+
+    .robot-emoji {
+      font-size: 1.8rem;
+      line-height: 1;
+    }
+
+    // Notification badge
+    .badge {
+      min-width: 18px;
+      height: 18px;
+      font-size: 0.7rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .notification-pulse {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: #dc3545;
+        animation: pulse-ring 2s infinite;
+      }
+    }
+  }
+}
+
+// Pulse animation for notifications
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+// Mobile responsive adjustments
+@media (max-width: 768px) {
+  .floating-robot-container {
+    bottom: 20px;
+    right: 20px;
+
+    .floating-robot-btn {
+      width: 56px;
+      height: 56px;
+      font-size: 1.4rem;
+
+      .robot-emoji {
+        font-size: 1.6rem;
+      }
+
+      // Better touch target for mobile
+      &::before {
         content: '';
         position: absolute;
-        left: 100%;
-        top: 50%;
-        transform: translateY(-50%);
-        border: 6px solid transparent;
-        border-left-color: rgba(0, 0, 0, 0.8);
+        top: -8px;
+        left: -8px;
+        right: -8px;
+        bottom: -8px;
+        z-index: -1;
       }
     }
-    
-    &:hover .floating-robot-tooltip {
-      opacity: 1;
+
+    // Hide when chat is open on mobile
+    &.chat-open-mobile {
+      display: none;
     }
   }
-  
-  // Animations
-  @keyframes pulse {
-    0% {
-      box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
-    }
-    50% {
-      box-shadow: 0 6px 20px rgba(0, 123, 255, 0.6);
-    }
-    100% {
-      box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
-    }
-  }
-  
-  @keyframes pulse-dot {
-    0%, 100% {
-      transform: scale(1);
-      opacity: 1;
-    }
-    50% {
-      transform: scale(1.2);
-      opacity: 0.7;
+}
+
+// Tablet adjustments
+@media (min-width: 769px) and (max-width: 1024px) {
+  .floating-robot-container {
+    bottom: 20px;
+    right: 20px;
+
+    .floating-robot-btn {
+      width: 58px;
+      height: 58px;
     }
   }
-  
-  // Responsive adjustments
-  @media (max-width: 768px) {
-    .floating-robot-container {
-      bottom: 20px;
-      right: 20px;
-      
-      .floating-robot-btn {
-        width: 56px;
-        height: 56px;
-        
-        .robot-icon .robot-emoji {
-          font-size: 24px;
-        }
-      }
+}
+
+// Accessibility improvements
+@media (prefers-reduced-motion: reduce) {
+  .floating-robot-btn {
+    animation: none !important;
+    transition: none !important;
+
+    &:hover {
+      transform: none !important;
+    }
+
+    .robot-icon {
+      transition: none !important;
     }
   }
-  
-  // Dark theme support
-  @media (prefers-color-scheme: dark) {
-    .floating-robot-container .floating-robot-tooltip {
-      background: rgba(255, 255, 255, 0.9);
-      color: #333;
-      
-      &::after {
-        border-left-color: rgba(255, 255, 255, 0.9);
-      }
-    }
+
+  .badge .notification-pulse {
+    animation: none !important;
   }
+}
