@@ -336,6 +336,230 @@ export const getPromptTemplates = onRequest(
     }
 );
 
+// 🧪 TEST LAB STREAMING ENDPOINT - Custom System Prompt + Context
+export const testLabStreamChat = onRequest(
+    {
+        region: 'us-central1',
+        cors: true
+    },
+    async (request, response) => {
+        corsHandler(request, response, async () => {
+            try {
+                if (request.method !== 'POST') {
+                    response.status(405).json({ error: 'Method not allowed' });
+                    return;
+                }
+
+                validateOrigin(request);
+
+                const { 
+                    message, 
+                    systemPrompt = '', 
+                    contextData = '', 
+                    conversationHistory = [] 
+                } = request.body;
+
+                // Basic validation
+                if (!message || typeof message !== 'string') {
+                    response.status(400).json({ error: 'Message is required' });
+                    return;
+                }
+
+                if (message.length > 4000) { // Increased limit for test lab
+                    response.status(400).json({ error: 'Message too long (max 4000 characters)' });
+                    return;
+                }
+
+                // Validate system prompt
+                if (systemPrompt && systemPrompt.length > 2000) {
+                    response.status(400).json({ error: 'System prompt too long (max 2000 characters)' });
+                    return;
+                }
+
+                // Validate context data
+                if (contextData && contextData.length > 10000) { // Large context limit
+                    response.status(400).json({ error: 'Context data too long (max 10000 characters)' });
+                    return;
+                }
+
+                // Rate limiting
+                const identifier = request.ip || 'anonymous';
+                const isAuthenticated = false;
+
+                if (!checkRateLimit(identifier, isAuthenticated)) {
+                    response.status(429).json({ error: 'Rate limit exceeded. Please try again later.' });
+                    return;
+                }
+
+                // Build the prompt with custom system prompt and context
+                let fullPrompt = '';
+
+                // Use custom system prompt if provided, otherwise default
+                if (systemPrompt && systemPrompt.trim()) {
+                    fullPrompt = systemPrompt.trim();
+                } else {
+                    // Fallback to helpful assistant
+                    fullPrompt = SYSTEM_PROMPTS.helpful.prompt;
+                }
+
+                // Add context data if provided
+                if (contextData && contextData.trim()) {
+                    fullPrompt += `\n\n--- CONTEXT INFORMATION ---\n${contextData.trim()}\n--- END CONTEXT ---`;
+                }
+
+                // Add conversation history (limited for performance)
+                if (conversationHistory.length > 0) {
+                    const recentHistory = conversationHistory
+                        .slice(-5) // Last 5 messages for test lab
+                        .filter((msg: any) => msg.content && msg.content.length < 1000)
+                        .map((msg: any) => `${msg.isUser ? 'User' : 'Assistant'}: ${msg.content}`)
+                        .join('\n');
+                    
+                    if (recentHistory) {
+                        fullPrompt += `\n\n--- CONVERSATION HISTORY ---\n${recentHistory}\n--- END HISTORY ---`;
+                    }
+                }
+
+                // Add the current user message
+                const sanitizedMessage = message.trim().substring(0, 4000);
+                fullPrompt += `\n\nUser: ${sanitizedMessage}\n\nAssistant:`;
+
+                // Set up streaming response
+                response.setHeader('Content-Type', 'text/plain; charset=utf-8');
+                response.setHeader('Cache-Control', 'no-cache');
+                response.setHeader('Connection', 'keep-alive');
+
+                // Generate streaming response
+                try {
+                    const result = await model.generateContentStream(fullPrompt);
+
+                    for await (const chunk of result.stream) {
+                        const chunkText = chunk.text();
+                        if (chunkText) {
+                            response.write(chunkText);
+                        }
+                    }
+
+                    response.end();
+                } catch (streamError) {
+                    console.error('Test Lab streaming error:', streamError);
+                    response.write('\n\n[Error: Failed to generate response]');
+                    response.end();
+                }
+
+                // Usage logging
+                console.log(`Test Lab streaming request - IP: ${identifier}, System prompt length: ${systemPrompt?.length || 0}, Context length: ${contextData?.length || 0}`);
+
+            } catch (error: any) {
+                console.error('Test Lab error:', error);
+
+                if (!response.headersSent) {
+                    response.status(500).json({ error: 'Server error occurred' });
+                }
+            }
+        });
+    }
+);
+
+// 🧪 TEST LAB NON-STREAMING ENDPOINT - Custom System Prompt + Context
+export const testLabChat = onRequest(
+    {
+        region: 'us-central1',
+        cors: true
+    },
+    async (request, response) => {
+        corsHandler(request, response, async () => {
+            try {
+                if (request.method !== 'POST') {
+                    response.status(405).json({ error: 'Method not allowed' });
+                    return;
+                }
+
+                validateOrigin(request);
+
+                const { 
+                    message, 
+                    systemPrompt = '', 
+                    contextData = '', 
+                    conversationHistory = [] 
+                } = request.body;
+
+                if (!message || typeof message !== 'string') {
+                    response.status(400).json({ error: 'Message is required' });
+                    return;
+                }
+
+                if (message.length > 4000) {
+                    response.status(400).json({ error: 'Message too long (max 4000 characters)' });
+                    return;
+                }
+
+                if (systemPrompt && systemPrompt.length > 2000) {
+                    response.status(400).json({ error: 'System prompt too long (max 2000 characters)' });
+                    return;
+                }
+
+                if (contextData && contextData.length > 10000) {
+                    response.status(400).json({ error: 'Context data too long (max 10000 characters)' });
+                    return;
+                }
+
+                const identifier = request.ip || 'anonymous';
+                if (!checkRateLimit(identifier, false)) {
+                    response.status(429).json({ error: 'Rate limit exceeded' });
+                    return;
+                }
+
+                // Build the prompt
+                let fullPrompt = '';
+
+                if (systemPrompt && systemPrompt.trim()) {
+                    fullPrompt = systemPrompt.trim();
+                } else {
+                    fullPrompt = SYSTEM_PROMPTS.helpful.prompt;
+                }
+
+                if (contextData && contextData.trim()) {
+                    fullPrompt += `\n\n--- CONTEXT INFORMATION ---\n${contextData.trim()}\n--- END CONTEXT ---`;
+                }
+
+                if (conversationHistory.length > 0) {
+                    const recentHistory = conversationHistory
+                        .slice(-5)
+                        .filter((msg: any) => msg.content && msg.content.length < 1000)
+                        .map((msg: any) => `${msg.isUser ? 'User' : 'Assistant'}: ${msg.content}`)
+                        .join('\n');
+                    
+                    if (recentHistory) {
+                        fullPrompt += `\n\n--- CONVERSATION HISTORY ---\n${recentHistory}\n--- END HISTORY ---`;
+                    }
+                }
+
+                const sanitizedMessage = message.trim().substring(0, 4000);
+                fullPrompt += `\n\nUser: ${sanitizedMessage}\n\nAssistant:`;
+
+                const result = await model.generateContent(fullPrompt);
+                const responseText = result.response.text();
+
+                response.json({
+                    response: responseText,
+                    promptType: 'Custom Test Lab',
+                    timestamp: new Date().toISOString(),
+                    success: true,
+                    systemPromptLength: systemPrompt?.length || 0,
+                    contextLength: contextData?.length || 0
+                });
+
+                console.log(`Test Lab request - IP: ${identifier}, System prompt: ${systemPrompt?.length || 0} chars, Context: ${contextData?.length || 0} chars`);
+
+            } catch (error: any) {
+                console.error('Test Lab error:', error);
+                response.status(500).json({ error: 'Server error occurred' });
+            }
+        });
+    }
+);
+
 // Health check
 export const healthCheck = onRequest(
     {

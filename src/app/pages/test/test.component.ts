@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../components/shared/header/header.component';
-import { FooterComponent } from '../../components/shared/footer/footer.component';
 import { ChatOverlayComponent } from '../../components/chat-overlay/chat-overlay.component';
 
 @Component({
@@ -12,22 +11,20 @@ import { ChatOverlayComponent } from '../../components/chat-overlay/chat-overlay
     CommonModule, 
     FormsModule, 
     HeaderComponent, 
-    FooterComponent, 
     ChatOverlayComponent
   ],
   templateUrl: './test.component.html',
   styleUrl: './test.component.scss'
 })
 export class TestComponent implements OnInit {
-  systemPrompt: string = `You are a helpful AI assistant focused on software development. 
+  systemPrompt: string = `You are a helpful AI assistant focused on software development.
 
 Guidelines:
 - Provide clear, concise responses
 - Include code examples when relevant
-- Ask clarifying questions if needed
 - Be professional and helpful
 
-Please respond based on the context provided and follow these guidelines.`;
+Please respond based on the context provided.`;
 
   contextData: string = `Context Information:
 - Working on an Angular 20 project
@@ -47,12 +44,20 @@ Add any relevant context here for better responses.`;
 
   onSystemPromptChange(): void {
     // Handle system prompt changes
-    console.log('System prompt updated:', this.systemPrompt);
+    if (this.systemPrompt.length > 2000) {
+      console.warn('System prompt exceeds 2000 character limit');
+    }
   }
 
   onContextChange(): void {
     // Handle context changes
-    console.log('Context updated:', this.contextData);
+    if (this.contextData.length > 10000) {
+      console.warn('Context data exceeds 10000 character limit');
+    }
+  }
+
+  isValidForChat(): boolean {
+    return this.systemPrompt.length <= 2000 && this.contextData.length <= 10000;
   }
 
   clearSystemPrompt(): void {
@@ -64,15 +69,14 @@ Add any relevant context here for better responses.`;
   }
 
   resetToDefaults(): void {
-    this.systemPrompt = `You are a helpful AI assistant focused on software development. 
+    this.systemPrompt = `You are a helpful AI assistant focused on software development.
 
 Guidelines:
 - Provide clear, concise responses
 - Include code examples when relevant
-- Ask clarifying questions if needed
 - Be professional and helpful
 
-Please respond based on the context provided and follow these guidelines.`;
+Please respond based on the context provided.`;
 
     this.contextData = `Context Information:
 - Working on an Angular 20 project
@@ -81,5 +85,19 @@ Please respond based on the context provided and follow these guidelines.`;
 - TypeScript for development
 
 Add any relevant context here for better responses.`;
+  }
+
+  getCharacterCountClass(currentLength: number, maxLength: number): string {
+    const percentage = (currentLength / maxLength) * 100;
+    
+    if (currentLength > maxLength) {
+      return 'text-danger';
+    } else if (percentage > 90) {
+      return 'text-warning';
+    } else if (percentage > 75) {
+      return 'text-info';
+    } else {
+      return 'text-muted';
+    }
   }
 }

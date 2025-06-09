@@ -3,7 +3,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { Message, MessageHistory } from '../models/message.model';
 import { ChatConfig, WidgetAppearance, SystemPromptConfig, DEFAULT_CHAT_CONFIG, DEFAULT_APPEARANCE, PromptTemplate } from '../models/chat-config.model';
 import { User, ChatSession, DEFAULT_USER_PREFERENCES } from '../models/user.model';
-import { ChatRequest, StreamingChatService } from './streaming-chat.service';
+import { ChatRequest, StreamingChatService, TestLabRequest } from './streaming-chat.service';
 
 @Injectable({
   providedIn: 'root'
@@ -203,6 +203,157 @@ export class ChatWidgetService {
 
     } catch (error: any) {
       console.error('Chat error:', error);
+      this.handleStreamingError(this.currentStreamingMessageId, error.message);
+    } finally {
+      this._isLoading.set(false);
+    }
+  }
+
+  // 🧪 TEST LAB: Streaming message with custom system prompt and context
+  async sendTestLabStreamingMessage(
+    content: string, 
+    systemPrompt?: string, 
+    contextData?: string
+  ): Promise<void> {
+    if (!content.trim() || this._isLoading()) return;
+
+    // Add user message
+    const userMessage: Message = {
+      id: this.generateMessageId(),
+      content: content.trim(),
+      isUser: true,
+      timestamp: new Date()
+    };
+
+    this.addMessage(userMessage);
+    this._isLoading.set(true);
+
+    // Create AI message placeholder
+    const aiMessage: Message = {
+      id: this.generateMessageId(),
+      content: '',
+      isUser: false,
+      timestamp: new Date(),
+      isStreaming: true
+    };
+
+    this.addMessage(aiMessage);
+    this.currentStreamingMessageId = aiMessage.id;
+
+    try {
+      // Prepare conversation history for context
+      const conversationHistory = this._messages()
+        .filter(m => !m.isStreaming && !m.error)
+        .slice(-6)
+        .map(m => ({
+          content: m.content,
+          isUser: m.isUser,
+          timestamp: m.timestamp
+        }));
+
+      // Create test lab streaming request
+      const request: TestLabRequest = {
+        message: content,
+        systemPrompt: systemPrompt || undefined,
+        contextData: contextData || undefined,
+        conversationHistory
+      };
+
+      // Start streaming with callbacks
+      await this.streamingChatService.createTestLabStreamingChat(
+        request,
+        // onChunk callback
+        (chunk: string) => {
+          aiMessage.content += chunk;
+          this.updateMessage(aiMessage);
+        },
+        // onComplete callback
+        () => {
+          aiMessage.isStreaming = false;
+          this.updateMessage(aiMessage);
+          this.currentStreamingMessageId = null;
+          this._isLoading.set(false);
+
+          // Mark as unread if widget is closed
+          if (!this._isOpen()) {
+            this._hasUnreadMessages.set(true);
+          }
+        },
+        // onError callback
+        (error: string) => {
+          this.handleStreamingError(aiMessage.id, error);
+          this._isLoading.set(false);
+        }
+      );
+
+    } catch (error: any) {
+      console.error('Test Lab streaming chat error:', error);
+      this.handleStreamingError(aiMessage.id, error.message);
+      this._isLoading.set(false);
+    }
+  }
+
+  // 🧪 TEST LAB: Non-streaming message with custom system prompt and context
+  async sendTestLabMessage(
+    content: string, 
+    systemPrompt?: string, 
+    contextData?: string
+  ): Promise<void> {
+    if (!content.trim() || this._isLoading()) return;
+
+    // Add user message
+    const userMessage: Message = {
+      id: this.generateMessageId(),
+      content: content.trim(),
+      isUser: true,
+      timestamp: new Date()
+    };
+
+    this.addMessage(userMessage);
+    this._isLoading.set(true);
+
+    try {
+      // Create AI message placeholder
+      const aiMessage: Message = {
+        id: this.generateMessageId(),
+        content: '',
+        isUser: false,
+        timestamp: new Date(),
+        isStreaming: true
+      };
+
+      this.addMessage(aiMessage);
+
+      // Prepare conversation history for context
+      const conversationHistory = this._messages()
+        .filter(m => !m.isStreaming && !m.error)
+        .slice(-6)
+        .map(m => ({
+          content: m.content,
+          isUser: m.isUser,
+          timestamp: m.timestamp
+        }));
+
+      // Send test lab non-streaming request
+      const response = await this.streamingChatService.sendTestLabMessage({
+        message: content,
+        systemPrompt: systemPrompt || undefined,
+        contextData: contextData || undefined,
+        conversationHistory
+      });
+
+      // Update AI message with response
+      aiMessage.content = response.response;
+      aiMessage.isStreaming = false;
+      this.updateMessage(aiMessage);
+
+      // Mark as unread if widget is closed
+      if (!this._isOpen()) {
+        this._hasUnreadMessages.set(true);
+      }
+
+    } catch (error: any) {
+      console.error('Test Lab chat error:', error);
       this.handleStreamingError(this.currentStreamingMessageId, error.message);
     } finally {
       this._isLoading.set(false);

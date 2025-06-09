@@ -2,12 +2,10 @@
 
 .demo-website {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
 }
 
 main {
-  flex: 1;
+  min-height: calc(100vh - 200px); // Approximate space for header and footer
 }
 
 .card {
@@ -47,7 +45,6 @@ main {
 
 // Footer styling
 footer {
-  margin-top: auto;
   border-top: 1px solid var(--bs-border-color);
 }
 

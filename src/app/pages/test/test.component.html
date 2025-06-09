@@ -38,8 +38,11 @@
                 rows="8">
               </textarea>
               <div class="textarea-footer">
-                <small class="text-muted">
-                  Characters: {{ systemPrompt.length || 0 }}
+                <small [class]="getCharacterCountClass(systemPrompt.length, 2000)">
+                  Characters: {{ systemPrompt.length || 0 }} / 2000
+                  <span *ngIf="systemPrompt.length > 2000" class="text-danger ms-1">
+                    ({{ systemPrompt.length - 2000 }} over limit)
+                  </span>
                 </small>
               </div>
             </div>
@@ -70,8 +73,11 @@
                 rows="10">
               </textarea>
               <div class="textarea-footer">
-                <small class="text-muted">
-                  Characters: {{ contextData.length || 0 }} | No character limit
+                <small [class]="getCharacterCountClass(contextData.length, 10000)">
+                  Characters: {{ contextData.length || 0 }} / 10000
+                  <span *ngIf="contextData.length > 10000" class="text-danger ms-1">
+                    ({{ contextData.length - 10000 }} over limit)
+                  </span>
                 </small>
               </div>
             </div>
@@ -88,19 +94,34 @@
               💬 AI Chat Interface
             </h4>
             <div class="chat-status">
-              <span class="badge bg-success">
-                🟢 Ready
+              <span class="badge" [ngClass]="isValidForChat() ? 'bg-success' : 'bg-warning'">
+                {{ isValidForChat() ? '🟢 Ready' : '⚠️ Check Limits' }}
               </span>
             </div>
           </div>
 
           <!-- Embedded Chat Component -->
           <div class="chat-container-embedded">
+            <!-- Validation Warning -->
+            <div class="alert alert-warning m-3" *ngIf="!isValidForChat()">
+              <strong>⚠️ Character Limits Exceeded:</strong>
+              <ul class="mb-0 mt-2">
+                <li *ngIf="systemPrompt.length > 2000">
+                  System prompt: {{ systemPrompt.length }}/2000 characters ({{ systemPrompt.length - 2000 }} over)
+                </li>
+                <li *ngIf="contextData.length > 10000">
+                  Context data: {{ contextData.length }}/10000 characters ({{ contextData.length - 10000 }} over)
+                </li>
+              </ul>
+              <small class="text-muted">Please reduce the text length before chatting.</small>
+            </div>
+
             <app-chat-overlay 
               [show]="isChatVisible"
               [embedded]="true"
               [systemPrompt]="systemPrompt"
-              [contextData]="contextData">
+              [contextData]="contextData"
+              [disabled]="!isValidForChat()">
             </app-chat-overlay>
           </div>
         </div>
@@ -109,4 +130,3 @@
   </div>
 </main>
 
-<app-footer></app-footer>

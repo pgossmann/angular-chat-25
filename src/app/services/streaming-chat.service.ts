@@ -10,6 +10,17 @@ export interface ChatRequest {
   }>;
 }
 
+export interface TestLabRequest {
+  message: string;
+  systemPrompt?: string;
+  contextData?: string;
+  conversationHistory?: Array<{
+    content: string;
+    isUser: boolean;
+    timestamp: Date;
+  }>;
+}
+
 export interface PromptTemplate {
   id: string;
   name: string;
@@ -122,6 +133,94 @@ export class StreamingChatService {
         { id: 'creative', name: 'Creative Assistant', description: 'Creative solutions' },
         { id: 'teacher', name: 'Patient Teacher', description: 'Educational guidance' }
       ];
+    }
+  }
+
+  // 🧪 TEST LAB: Send streaming message with custom system prompt and context
+  async createTestLabStreamingChat(
+    request: TestLabRequest, 
+    onChunk: (chunk: string) => void, 
+    onComplete: () => void, 
+    onError: (error: string) => void
+  ) {
+    try {
+      const response = await fetch(`${this.baseUrl}/testLabStreamChat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        onError(errorData.error || 'Test Lab request failed');
+        return;
+      }
+
+      if (!response.body) {
+        onError('No response body');
+        return;
+      }
+
+      // Create a reader for the response stream
+      const reader = response.body.getReader();
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) {
+            onComplete();
+            break;
+          }
+
+          // Decode the chunk and call the callback
+          const chunkText = this.decoder.decode(value);
+          if (chunkText) {
+            onChunk(chunkText);
+          }
+        }
+      } catch (streamError) {
+        console.error('Test Lab stream reading error:', streamError);
+        onError('Test Lab stream reading failed');
+      } finally {
+        reader.releaseLock();
+      }
+
+    } catch (error: any) {
+      console.error('Test Lab fetch error:', error);
+      onError(error.message || 'Test Lab network error');
+    }
+  }
+
+  // 🧪 TEST LAB: Fallback non-streaming chat with custom system prompt and context
+  async sendTestLabMessage(request: TestLabRequest): Promise<{ 
+    response: string; 
+    promptType: string; 
+    timestamp: string; 
+    success: boolean;
+    systemPromptLength: number;
+    contextLength: number;
+  }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/testLabChat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Test Lab request failed');
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      console.error('Test Lab non-streaming chat error:', error);
+      throw error;
     }
   }
 

@@ -1,11 +1,11 @@
 .test-main {
   min-height: 100vh;
   padding-top: 80px; // Account for fixed header
-  padding-bottom: 2rem;
+  padding-bottom: 0; // No footer, so no bottom padding needed
   background: var(--bs-light);
 
   .container-fluid {
-    height: calc(100vh - 80px); // Full height minus header
+    height: calc(100vh - 80px); // Full height minus header only
     max-height: calc(100vh - 80px);
   }
 

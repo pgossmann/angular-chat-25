@@ -20,6 +20,7 @@ export class ChatOverlayComponent implements AfterViewChecked, OnChanges {
   @Input() embedded: boolean = false;
   @Input() systemPrompt: string = '';
   @Input() contextData: string = '';
+  @Input() disabled: boolean = false;
 
   private chatService = inject(ChatWidgetService);
 
@@ -64,34 +65,38 @@ export class ChatOverlayComponent implements AfterViewChecked, OnChanges {
   }
 
   async sendMessage(): Promise<void> {
-    if (!this.currentMessage.trim() || this.isLoading()) return;
+    if (!this.currentMessage.trim() || this.isLoading() || this.disabled) return;
 
-    // Update system prompt before sending
-    if (this.embedded && this.systemPrompt) {
-      // In embedded mode, use the system prompt from parent
-      this.chatService.setCustomSystemPrompt(this.systemPrompt);
+    const message = this.currentMessage.trim();
+    this.currentMessage = '';
+
+    if (this.embedded) {
+      // In embedded mode, use test lab methods with custom system prompt and context
+      if (this.useStreaming) {
+        await this.chatService.sendTestLabStreamingMessage(
+          message,
+          this.systemPrompt?.trim() || undefined,
+          this.contextData?.trim() || undefined
+        );
+      } else {
+        await this.chatService.sendTestLabMessage(
+          message,
+          this.systemPrompt?.trim() || undefined,
+          this.contextData?.trim() || undefined
+        );
+      }
     } else {
-      // In normal mode, use selected prompt
+      // In normal mode, use regular methods with predefined prompts
       this.chatService.setSystemPrompt(this.selectedPromptType);
       if (this.selectedPromptType === 'custom') {
         this.chatService.setCustomSystemPrompt(this.customPrompt);
       }
-    }
 
-    let message = this.currentMessage.trim();
-    
-    // In embedded mode, prepend context data to the message if available
-    if (this.embedded && this.contextData?.trim()) {
-      message = `Context:\n${this.contextData}\n\nQuestion/Request:\n${message}`;
-    }
-    
-    this.currentMessage = '';
-
-    // Choose streaming or non-streaming based on toggle
-    if (this.useStreaming) {
-      await this.chatService.sendStreamingMessage(message);
-    } else {
-      await this.chatService.sendMessage(message);
+      if (this.useStreaming) {
+        await this.chatService.sendStreamingMessage(message);
+      } else {
+        await this.chatService.sendMessage(message);
+      }
     }
   }
 

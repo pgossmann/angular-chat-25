@@ -138,7 +138,7 @@
             (keydown)="onKeyDown($event)"
             (input)="adjustTextareaHeight($event)"
             [placeholder]="appearance().placeholder"
-            [disabled]="isLoading()"
+            [disabled]="isLoading() || disabled"
             rows="1"
             #messageInput>
           </textarea>
@@ -149,7 +149,7 @@
             type="button"
             class="send-btn"
             (click)="sendMessage()"
-            [disabled]="!currentMessage.trim() || isLoading()"
+            [disabled]="!currentMessage.trim() || isLoading() || disabled"
             [attr.title]="isLoading() ? 'Sending...' : 'Send message'">
             
             @if (isLoading()) {
