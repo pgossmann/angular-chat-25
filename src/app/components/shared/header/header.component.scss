@@ -1,5 +1,5 @@
 .navbar {
-    background: rgba(46, 39, 40, 0.95) !important;
+    background: var(--bs-primary) !important;
     backdrop-filter: blur(10px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding: 1rem 0;
@@ -11,7 +11,7 @@
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      color: var(--color-white) !important;
+      color: white !important;
       text-decoration: none;
       transition: all 0.3s ease;
   
@@ -25,10 +25,7 @@
       }
   
       .brand-text {
-        background: linear-gradient(135deg, #fc7462 0%, #f1bad5 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        color: white;
       }
     }
   
@@ -43,13 +40,13 @@
         position: relative;
   
         &:hover {
-          color: var(--color-white) !important;
+          color: white !important;
           background: rgba(255, 255, 255, 0.1);
           transform: translateY(-2px);
         }
   
         &.active {
-          color: var(--color-white) !important;
+          color: white !important;
           
           &::after {
             content: '';
@@ -59,7 +56,7 @@
             transform: translateX(-50%);
             width: 6px;
             height: 6px;
-            background: #fc7462;
+            background: var(--bs-primary);
             border-radius: 50%;
           }
         }
@@ -83,7 +80,7 @@
   // Mobile menu animation
   @media (max-width: 991.98px) {
     .navbar-collapse {
-      background: rgba(46, 39, 40, 0.98);
+      background: var(--bs-dark);
       margin-top: 1rem;
       padding: 1rem;
       border-radius: 15px;

@@ -23,7 +23,7 @@
     .hero-title {
       font-size: 3.5rem;
       font-weight: 800;
-      color: var(--color-white);
+      color: white;
       margin-bottom: 1.5rem;
       line-height: 1.1;
   
@@ -44,7 +44,7 @@
         font-size: 0.9rem;
         padding: 0.5rem 1rem;
         border-radius: 20px;
-        background: rgba(46, 39, 40, 0.8) !important;
+        background: var(--bs-dark) !important;
         backdrop-filter: blur(10px);
       }
     }
@@ -58,13 +58,13 @@
     .section-title {
       font-size: 2.5rem;
       font-weight: 700;
-      color: #2e2728;
+      color: var(--bs-dark);
       margin-bottom: 1rem;
     }
   
     .section-subtitle {
       font-size: 1.1rem;
-      color: #47659e;
+      color: var(--bs-secondary);
       max-width: 600px;
       margin: 0 auto;
     }
@@ -85,13 +85,13 @@
       .feature-title {
         font-size: 1.1rem;
         font-weight: 600;
-        color: #2e2728;
+        color: var(--bs-dark);
         margin-bottom: 1rem;
         line-height: 1.3;
       }
   
       .feature-description {
-        color: #47659e;
+        color: var(--bs-secondary);
         line-height: 1.6;
         margin: 0;
         font-size: 0.95rem;
@@ -114,7 +114,7 @@
       .instructions-title {
         font-size: 2rem;
         font-weight: 700;
-        color: #2e2728;
+        color: var(--bs-dark);
         text-align: center;
         margin-bottom: 3rem;
       }
@@ -133,8 +133,8 @@
         .step-number {
           width: 40px;
           height: 40px;
-          background: linear-gradient(135deg, #2e2728 0%, #47659e 100%);
-          color: var(--color-white);
+          background: var(--bs-primary);
+          color: white;
           border-radius: 50%;
           display: flex;
           align-items: center;
@@ -150,12 +150,12 @@
           h5 {
             font-size: 1.2rem;
             font-weight: 600;
-            color: #2e2728;
+            color: var(--bs-dark);
             margin-bottom: 0.5rem;
           }
   
           p {
-            color: #47659e;
+            color: var(--bs-secondary);
             margin: 0;
             line-height: 1.6;
           }
@@ -178,18 +178,18 @@
       .cta-title {
         font-size: 2rem;
         font-weight: 700;
-        color: #2e2728;
+        color: var(--bs-dark);
         margin-bottom: 1rem;
       }
   
       .cta-description {
         font-size: 1.1rem;
-        color: #47659e;
+        color: var(--bs-secondary);
         margin-bottom: 2rem;
       }
   
       .cta-arrow {
-        color: #fc7462;
+        color: var(--bs-primary);
         animation: bounce 2s infinite;
       }
     }

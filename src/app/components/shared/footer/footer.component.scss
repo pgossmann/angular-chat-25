@@ -1,5 +1,5 @@
 .footer {
-    background: rgba(46, 39, 40, 0.95);
+    background: var(--bs-primary);
     backdrop-filter: blur(10px);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding: 3rem 0 2rem;
@@ -49,8 +49,8 @@
         transition: all 0.3s ease;
   
         &:hover {
-          background: rgba(252, 116, 98, 0.2);
-          color: #fc7462;
+          background: rgba(13, 110, 253, 0.2);
+          color: var(--bs-primary);
           transform: translateY(-2px);
         }
       }
