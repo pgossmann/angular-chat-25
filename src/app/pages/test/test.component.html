@@ -1,0 +1,112 @@
+<app-header></app-header>
+
+<main class="test-main">
+  <div class="container-fluid h-100">
+    <div class="row h-100">
+      <!-- Left Panel: System Prompt and Context -->
+      <div class="col-lg-6 left-panel">
+        <div class="panel-content">
+          
+          <!-- System Prompt Section -->
+          <div class="prompt-section">
+            <div class="section-header">
+              <h4 class="section-title">
+                ⚙️ System Prompt & Guidelines
+              </h4>
+              <div class="section-actions">
+                <button 
+                  class="btn btn-outline-secondary btn-sm me-2" 
+                  (click)="clearSystemPrompt()"
+                  title="Clear system prompt">
+                  🗑️
+                </button>
+                <button 
+                  class="btn btn-outline-primary btn-sm" 
+                  (click)="resetToDefaults()"
+                  title="Reset to defaults">
+                  🔄
+                </button>
+              </div>
+            </div>
+            
+            <div class="textarea-container">
+              <textarea 
+                class="form-control system-prompt-textarea"
+                [(ngModel)]="systemPrompt"
+                (ngModelChange)="onSystemPromptChange()"
+                placeholder="Enter system prompt and guidelines for the AI assistant..."
+                rows="8">
+              </textarea>
+              <div class="textarea-footer">
+                <small class="text-muted">
+                  Characters: {{ systemPrompt.length || 0 }}
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Context Section -->
+          <div class="context-section">
+            <div class="section-header">
+              <h4 class="section-title">
+                📄 Context Information
+              </h4>
+              <div class="section-actions">
+                <button 
+                  class="btn btn-outline-secondary btn-sm" 
+                  (click)="clearContext()"
+                  title="Clear context">
+                  🗑️
+                </button>
+              </div>
+            </div>
+            
+            <div class="textarea-container">
+              <textarea 
+                class="form-control context-textarea"
+                [(ngModel)]="contextData"
+                (ngModelChange)="onContextChange()"
+                placeholder="Add context information, code snippets, documentation, or any relevant data..."
+                rows="10">
+              </textarea>
+              <div class="textarea-footer">
+                <small class="text-muted">
+                  Characters: {{ contextData.length || 0 }} | No character limit
+                </small>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Right Panel: Chat Interface -->
+      <div class="col-lg-6 right-panel">
+        <div class="chat-panel">
+          <div class="chat-header-custom">
+            <h4 class="chat-title">
+              💬 AI Chat Interface
+            </h4>
+            <div class="chat-status">
+              <span class="badge bg-success">
+                🟢 Ready
+              </span>
+            </div>
+          </div>
+
+          <!-- Embedded Chat Component -->
+          <div class="chat-container-embedded">
+            <app-chat-overlay 
+              [show]="isChatVisible"
+              [embedded]="true"
+              [systemPrompt]="systemPrompt"
+              [contextData]="contextData">
+            </app-chat-overlay>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<app-footer></app-footer>

@@ -1,9 +1,9 @@
 <!-- Chat Overlay Container -->
-<div class="chat-overlay" [class.show]="isOpen()" *ngIf="isOpen()">
+<div class="chat-overlay" [class.show]="embedded ? show : isOpen()" [class.embedded]="embedded" *ngIf="embedded ? show : isOpen()">
     <div class="chat-container">
       
       <!-- Chat Header -->
-      <div class="chat-header">
+      <div class="chat-header" *ngIf="!embedded">
         <div class="d-flex align-items-center">
           <span class="chat-avatar me-2">{{ appearance().robotIcon }}</span>
           <div class="flex-grow-1">
@@ -20,7 +20,7 @@
       </div>
   
       <!-- System Prompt Selector -->
-      <div class="chat-controls">
+      <div class="chat-controls" *ngIf="!embedded">
         <div class="row g-2 align-items-center">
           <div class="col">
             <label for="promptSelect" class="form-label mb-1 small">Assistant Role:</label>

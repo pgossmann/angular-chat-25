@@ -1,4 +1,4 @@
-import { Component, computed, inject, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import { Component, computed, inject, ViewChild, ElementRef, AfterViewChecked, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MarkdownModule } from 'ngx-markdown';
@@ -11,9 +11,15 @@ import { ChatWidgetService } from '../../services/chat-widget.service';
   templateUrl: './chat-overlay.component.html',
   styleUrl: './chat-overlay.component.scss'
 })
-export class ChatOverlayComponent implements AfterViewChecked {
+export class ChatOverlayComponent implements AfterViewChecked, OnChanges {
   @ViewChild('chatMessages') private chatMessages!: ElementRef;
   @ViewChild('messageInput') private messageInput!: ElementRef;
+
+  // Input properties for embedded mode
+  @Input() show: boolean = true;
+  @Input() embedded: boolean = false;
+  @Input() systemPrompt: string = '';
+  @Input() contextData: string = '';
 
   private chatService = inject(ChatWidgetService);
 
@@ -37,6 +43,15 @@ export class ChatOverlayComponent implements AfterViewChecked {
     this.scrollToBottom();
   }
 
+  ngOnChanges(changes: SimpleChanges) {
+    // Update system prompt when it changes from parent
+    if (changes['systemPrompt'] && this.systemPrompt) {
+      this.chatService.setCustomSystemPrompt(this.systemPrompt);
+      this.selectedPromptType = 'custom';
+      this.customPrompt = this.systemPrompt;
+    }
+  }
+
   onCloseChat(): void {
     this.chatService.closeWidget();
   }
@@ -52,12 +67,24 @@ export class ChatOverlayComponent implements AfterViewChecked {
     if (!this.currentMessage.trim() || this.isLoading()) return;
 
     // Update system prompt before sending
-    this.chatService.setSystemPrompt(this.selectedPromptType);
-    if (this.selectedPromptType === 'custom') {
-      this.chatService.setCustomSystemPrompt(this.customPrompt);
+    if (this.embedded && this.systemPrompt) {
+      // In embedded mode, use the system prompt from parent
+      this.chatService.setCustomSystemPrompt(this.systemPrompt);
+    } else {
+      // In normal mode, use selected prompt
+      this.chatService.setSystemPrompt(this.selectedPromptType);
+      if (this.selectedPromptType === 'custom') {
+        this.chatService.setCustomSystemPrompt(this.customPrompt);
+      }
     }
 
-    const message = this.currentMessage.trim();
+    let message = this.currentMessage.trim();
+    
+    // In embedded mode, prepend context data to the message if available
+    if (this.embedded && this.contextData?.trim()) {
+      message = `Context:\n${this.contextData}\n\nQuestion/Request:\n${message}`;
+    }
+    
     this.currentMessage = '';
 
     // Choose streaming or non-streaming based on toggle

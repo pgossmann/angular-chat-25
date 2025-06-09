@@ -16,6 +16,28 @@
     pointer-events: all;
   }
 
+  // Embedded mode styling
+  &.embedded {
+    position: static !important;
+    width: 100% !important;
+    height: 100% !important;
+    opacity: 1 !important;
+    transform: none !important;
+    pointer-events: all !important;
+    transition: none !important;
+    bottom: auto !important;
+    right: auto !important;
+    z-index: auto !important;
+
+    .chat-container {
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+      box-shadow: none;
+      border: none;
+    }
+  }
+
   .chat-container {
     height: 100%;
     background: white;
